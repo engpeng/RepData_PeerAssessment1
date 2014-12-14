@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>html_document:</title>
+
+<script type="text/javascript">
+window.onload = function() {
+  var imgs = document.getElementsByTagName('img'), i, img;
+  for (i = 0; i < imgs.length; i++) {
+    img = imgs[i];
+    // center an image if it is the only element of its parent
+    if (img.parentElement.childElementCount === 1)
+      img.parentElement.style.textAlign = 'center';
+  }
+};
+</script>
+
+
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+pre {
+  overflow-x: auto;
+}
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<p>##&mdash;
+##title: &ldquo;Reproducible Research: Peer Assessment 1&rdquo;
+##output: </p>
+
+<h2>html_document:</h2>
+
+<h2>keep_md: true</h2>
+
+<p>##&mdash;</p>
+
+<h2>Loading and preprocessing the data</h2>
+
+<p>#load data
+activity &lt;- NULL
+activity &lt;- read.csv(&ldquo;activity.csv&rdquo;, header = T, sep = &ldquo;,&rdquo;)</p>
+
+<p>#process data into suitable format for analysis
+activity$timeanddate &lt;- as.POSIXct(
+    with(
+      activity,
+      paste(
+        date,
+        paste(interval %/% 100, interval %% 100, sep=&ldquo;:&rdquo;))
+      ),
+      format=&ldquo;%Y-%m-%d %H:%M&rdquo;,tz=&ldquo;&rdquo;)</p>
+
+<h2>What is mean total number of steps taken per day?</h2>
+
+<p>#libraries needed for plots
+library(ggplot2)
+library(scales)
+library(grid)
+library(gridExtra)</p>
+
+<p>#calculating data for histogram
+stepperday&lt;- setNames(
+      aggregate(
+          steps~as.Date(date),
+          activity,
+          sum,
+          na.rm = TRUE),
+      c(&ldquo;date&rdquo;,&ldquo;steps&rdquo;)
+    )</p>
+
+<p>#plotting histogram
+hist1 &lt;- ggplot(stepperday,aes(x=date,y=steps)) + 
+  geom_bar(stat=&ldquo;identity&rdquo;) + 
+  ggtitle(&ldquo;Total number of steps per day (source data)&rdquo;)</p>
+
+<p>print(hist1)</p>
+
+<p>#find mean and media
+meanandmed &lt;- c(mean = mean(stepperday$steps),median = median(stepperday$steps))
+print(meanandmed)</p>
+
+<h2>What is the average daily activity pattern?</h2>
+
+<p>#time series plot
+avg &lt;- aggregate(steps~interval,activity,mean,na.rm = TRUE)
+avg$time &lt;- as.POSIXct(with(avg,paste(interval %/% 100, interval %% 100, sep=&ldquo;:&rdquo;)),format=&ldquo;%H:%M&rdquo;)
+plot &lt;- ggplot(avg,aes(x=time,y=steps)) + 
+          geom_line() + 
+          scale_x_datetime(breaks = date_breaks(&ldquo;2 hour&rdquo;),labels = date_format(&ldquo;%H:%M&rdquo;))
+print(plot)</p>
+
+<p>#max number of steps
+with(avg,avg[steps == max(steps),])</p>
+
+<h2>Imputing missing values</h2>
+
+<p>#number of missing values
+NAvalue &lt;- aggregate(cnt~date,cbind(activity[is.na(activity$steps),],cnt=c(1)),sum,na.rm = FALSE)
+NAvalue$dow &lt;- weekdays(as.Date(NAvalue$date),abbreviate=TRUE)
+print(NAvalue[,c(1,3,2)])</p>
+
+<p>#filling in NA values
+unique(NAvalue$dow)
+newset &lt;- aggregate(steps~interval+weekdays(timeanddate,abbreviate=TRUE),activity,FUN=mean,na.rm=TRUE)
+colnames(newset) &lt;- c(&ldquo;interval&rdquo;,&ldquo;dow&rdquo;,&ldquo;avg_steps&rdquo;)
+newset$dow &lt;- factor(newset$dow,levels = c(&ldquo;Mon&rdquo;,&ldquo;Tue&rdquo;,&ldquo;Wed&rdquo;,&ldquo;Thu&rdquo;,&ldquo;Fri&rdquo;,&ldquo;Sat&rdquo;,&ldquo;Sun&rdquo;))
+ggplot(newset,aes(x=interval,y=avg_steps)) + geom_line() + facet_grid(&ldquo;dow ~ .&rdquo;)</p>
+
+<p>#full data set
+activity$dow &lt;- weekdays(activity$timeanddate,abbreviate=TRUE)
+merged &lt;- merge(activity,newset,by=c(&ldquo;dow&rdquo;,&ldquo;interval&rdquo;),all.x = TRUE)
+merged &lt;- merged[with(merged,order(date,interval)),]
+merged$fixed_steps &lt;- ifelse(is.na(merged$steps),merged$avg_steps,merged$steps)</p>
+
+<p>#histogram of total steps each day, mean and median</p>
+
+<h1>calculating data set for histogram</h1>
+
+<p>NEWstepperday &lt;- setNames(
+      aggregate(
+          fixed_steps~as.Date(date),
+          merged,
+          sum,
+          na.rm = TRUE),
+      c(&ldquo;date&rdquo;,&ldquo;steps&rdquo;)
+    )</p>
+
+<h1>plotting histogram</h1>
+
+<p>hist2 &lt;- ggplot(NEWstepperday,aes(x=date,y=steps)) + 
+  geom_bar(stat=&ldquo;identity&rdquo;) + 
+  ggtitle(&ldquo;Total number of steps per day (fixed data)&rdquo;)</p>
+
+<h1>combining with previous</h1>
+
+<p>grid.arrange(hist1, hist2, nrow=2)</p>
+
+<p>NEWmeanandmed &lt;- c(mean = mean(NEWstepperday$steps),median = median(NEWstepperday$steps))
+difference &lt;- rbind(source = meanandmed, fixed = NEWmeanandmed, delta = NEWmeanandmed-meanandmed)
+  print(difference)</p>
+
+<h2>Are there differences in activity patterns between weekdays and weekends?</h2>
+
+<p>#create factor vairable
+week_diff &lt;- aggregate(
+  steps~dow+interval,  # group steps by weekend/weekday and interval to find average steps 
+  with(
+    activity,
+    data.frame(
+      dow = factor(
+        ifelse(
+          weekdays(as.Date(date)) %in% c(&ldquo;Sunday&rdquo;,&ldquo;Saturday&rdquo;),
+          &ldquo;weekend&rdquo;,  # if sunday or saturday
+          &ldquo;weekday&rdquo;   # else
+        )
+      ),
+      interval,
+      steps
+    )
+  ),
+  FUN = mean,
+  rm.na = TRUE
+)</p>
+
+<p>#time series
+ggplot(week_diff,aes(x=interval,y=steps)) + geom_line() + facet_grid(&ldquo;dow ~ .&rdquo;)</p>
+
+</body>
+
+</html>
